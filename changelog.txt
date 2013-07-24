@@ -1,0 +1,7 @@
+2013/4/15
+1.增加Form表单验证,参考登陆页面和用户添加页面。 
+2013/4/8
+1.增加Spring和Groovy集成演示（从数据库中加载Groovy代码功能）
+2.HazeSpecification增加常用查询条件判断（待完善）
+3.AbstractBaseService增加按照查询条件动态查询分页对象
+4.将BaseRepository移到com.xinyuan.haze.core.jpa.repository包下，删除BaseSpecification

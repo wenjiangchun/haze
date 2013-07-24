@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:aop="http://www.springframework.org/schema/aop" 
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/aop 
+        http://www.springframework.org/schema/aop/spring-aop.xsd ">
+    
+    <!-- 自动扫描且只扫描@Controller -->
+	<context:component-scan base-package="com.xinyuan.haze" use-default-filters="false">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+	</context:component-scan>
+	
+	<mvc:annotation-driven/>
+	
+	<!-- 将无法mapping到Controller的path交给default servlet handler处理 -->
+	<mvc:default-servlet-handler/>
+	
+	<!-- 定义JSP文件的位置 -->  
+	<bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="order" value="1"/>
+		<property name="prefix" value="/WEB-INF/views/"/>
+		<property name="suffix" value=".jsp"/>
+	</bean>
+	
+	<!-- Handles HTTP GET requests for /resources/** by efficiently serving up static resources in the ${webappRoot}/resources directory -->
+	<mvc:resources mapping="/resources/**" location="/resources/" />
+	
+	<!-- 定义无Controller的path<->view直接映射 -->
+	<mvc:view-controller path="/" view-name="index"/>
+	<mvc:view-controller path="/web/mashup-client" view-name="/web/mashup-client"/>
+	
+	<!-- 支持 Shiro对Controller的方法级AOP安全控制 begin-->
+	<bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator" depends-on="lifecycleBeanPostProcessor">
+		<property name="proxyTargetClass" value="true" />
+	</bean>
+	
+	<bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+    	<property name="securityManager" ref="securityManager"/>
+	</bean>
+	
+	<bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">  
+		<property name="exceptionMappings">  
+			<props>  
+				<prop key="org.springframework.validation.BindException">error/400</prop>
+				<prop key="org.apache.shiro.authz.UnauthorizedException">error/403</prop>  
+            </props>  
+		</property>  
+    </bean> 
+
+    <!-- 国际化配置  -->
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">                   
+		<property name="basename" value="locale.messages"/>
+		<property name="useCodeAsDefaultMessage" value="true"/>   
+	</bean>
+	<bean id="localeResolver" class="org.springframework.web.servlet.i18n.SessionLocaleResolver" />
+	<mvc:interceptors>  
+        <bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor" />  
+    </mvc:interceptors>
+    
+    <!-- 主题配置  -->
+     <bean  id="themeSource" class="org.springframework.ui.context.support.ResourceBundleThemeSource">  
+        <property name="basenamePrefix" value="theme."></property>  
+     </bean>  
+     <bean id="themeResolver" class="org.springframework.web.servlet.theme.SessionThemeResolver">  
+        <property name="defaultThemeName" value="default" />  
+     </bean>  
+    
+     <bean class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">      
+        <property name="messageConverters">      
+            <list >      
+                <ref bean="mappingJacksonHttpMessageConverter" />      
+            </list>      
+        </property>      
+    </bean>
+    <bean id="mappingJacksonHttpMessageConverter" class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">    
+	    <property name="supportedMediaTypes">    
+	        <list>    
+	            <value>application/json;charset=UTF-8</value>  
+	            <value>text/html;charset=UTF-8</value>  
+	       </list>    
+	    </property>  
+    </bean>    
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver" />
+
+    <bean id="jasperReportsViewResolver" class="org.springframework.web.servlet.view.jasperreports.JasperReportsViewResolver">
+	    <property name="order" value="0"/>    <!-- 视图渲染优先级，此处为0，优先于渲染JSP -->
+	    <property name="viewClass" value="com.xinyuan.haze.jasperreport.view.JasperReportView"/> <!-- 自定义视图渲染类，继承于JasperReportsMultiFormatView -->
+	    <property name="prefix" value="/WEB-INF/report/"/>    <!-- 报表模板路径 -->
+	    <property name="suffix" value=".jasper"/> <!-- 模板后缀 -->
+	    <property name="viewNames" value="*-report"/> <!-- 试图渲染所有以"-report"结尾的视图名(viewName) -->
+	    <property name="cache" value="true"/> <!-- 缓存模板(false时，每次请求都会重新加载模板，建议debug模板时设置为false) -->
+	    <property name="jdbcDataSource" ref="dataSource"/>    <!-- 指定数据源 -->
+	    <property name="exporterParameters">  <!-- 渲染时的相关参数 -->
+	        <map>
+	            <entry key="net.sf.jasperreports.engine.export.JRHtmlExporterParameter.IMAGES_URI" value="images/"/>  <!-- HTML时的白色背景图片(px)路径 -->
+	            <entry key="net.sf.jasperreports.engine.export.JRHtmlExporterParameter.CHARACTER_ENCODING" value="UTF-8"/>
+	        </map>
+	    </property>
+	</bean>
+
+</beans>
